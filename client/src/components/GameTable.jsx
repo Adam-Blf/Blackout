@@ -36,7 +36,9 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
   const currentPlayer = players[currentPlayerIndex];
   const topCard = discardPile[discardPile.length - 1];
 
-  const joinUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
+  // Use window.location.origin to get protocol + hostname + port (if any)
+  // Add ?game=99 parameter to skip the hub
+  const joinUrl = `${window.location.origin}?game=99`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(joinUrl);

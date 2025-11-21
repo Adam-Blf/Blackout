@@ -124,6 +124,16 @@ function Game99({ onBack }) {
 function AppContent() {
   const [currentScreen, setCurrentScreen] = useState('home'); // home, 99
 
+  useEffect(() => {
+    // Check for URL parameters to auto-join a game
+    const params = new URLSearchParams(window.location.search);
+    const gameParam = params.get('game');
+    
+    if (gameParam === '99') {
+      setCurrentScreen('99');
+    }
+  }, []);
+
   if (currentScreen === 'home') {
     return <Home onSelectGame={(game) => setCurrentScreen(game)} />;
   }

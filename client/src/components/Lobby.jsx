@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Beer, Monitor, Smartphone } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function Lobby({ onHost, onJoin, isMobile, initialRoomCode }) {
+export default function Lobby({ onHost, onJoin, isMobile, initialRoomCode, isConnected = true }) {
   const [name, setName] = useState('');
   const [roomCode, setRoomCode] = useState(initialRoomCode || '');
   const { t } = useLanguage();
@@ -13,6 +13,11 @@ export default function Lobby({ onHost, onJoin, isMobile, initialRoomCode }) {
         <img src="/Logo 99.svg" alt="Le 99" className="w-32 h-32 mx-auto mb-4" />
         <h1 className="text-4xl font-bold text-gold">{t('lobby.title')}</h1>
         <p className="text-xl opacity-80">{t('lobby.subtitle')}</p>
+        {!isConnected && (
+          <div className="mt-2 text-red-400 bg-red-900/20 px-4 py-1 rounded-full text-sm inline-block animate-pulse">
+            Connecting to server...
+          </div>
+        )}
       </div>
 
       <div className="bg-black/30 p-8 rounded-xl backdrop-blur-sm w-full max-w-md space-y-6 border border-white/10 shadow-2xl">
@@ -22,9 +27,10 @@ export default function Lobby({ onHost, onJoin, isMobile, initialRoomCode }) {
           <div className="space-y-4">
             <button 
               onClick={onHost}
-              className="w-full bg-gradient-to-r from-casino-red to-red-900 text-white font-bold py-4 rounded-xl hover:scale-105 transition shadow-[0_0_20px_rgba(220,38,38,0.3)] border border-red-500/30 flex items-center justify-center gap-3 group"
+              disabled={!isConnected}
+              className={`w-full bg-gradient-to-r from-casino-red to-red-900 text-white font-bold py-4 rounded-xl transition shadow-[0_0_20px_rgba(220,38,38,0.3)] border border-red-500/30 flex items-center justify-center gap-3 group ${!isConnected ? 'opacity-50 cursor-not-allowed grayscale' : 'hover:scale-105'}`}
             >
-              <Monitor size={28} className="group-hover:animate-pulse" />
+              <Monitor size={28} className={isConnected ? "group-hover:animate-pulse" : ""} />
               <div className="text-left">
                 <div className="text-lg leading-none uppercase tracking-wider">{t('lobby.host')}</div>
                 <div className="text-xs opacity-70 font-normal">Use PC as TV Screen</div>

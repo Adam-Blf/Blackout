@@ -1,135 +1,62 @@
 import React, { useState, useEffect } from 'react';
-import io from 'socket.io-client';
 import Lobby from './components/Lobby';
 import GameTable from './components/GameTable';
 import PlayerHand from './components/PlayerHand';
 import Home from './components/Home';
+import Toast from './components/ui/Toast';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { useDeviceDetect } from './hooks/useDeviceDetect';
-
-// Connect to server (assume localhost:3001 for dev, or relative for prod)
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '/');
-const socket = io(SERVER_URL, {
-  reconnectionAttempts: 5,
-  timeout: 10000,
-  autoConnect: true
-});
+import { useGameSocket } from './hooks/useGameSocket';
 
 function Game99({ onBack }) {
-  const [view, setView] = useState('lobby'); // lobby, table, hand
-  const [gameState, setGameState] = useState(null);
-  const [playerName, setPlayerName] = useState('');
-  const [playerId, setPlayerId] = useState('');
-  const [roomCode, setRoomCode] = useState('');
-  const [isConnected, setIsConnected] = useState(socket.connected);
+  const { 
+    isConnected, 
+    gameState, 
+    roomCode, 
+    playerId, 
+    error, 
+    view, 
+    actions 
+  } = useGameSocket();
+  
   const { isMobile } = useDeviceDetect();
   const { t } = useLanguage();
+  const [localError, setLocalError] = useState(null);
 
+  // Sync socket error to local toast
   useEffect(() => {
-    const onConnect = () => {
-      setIsConnected(true);
-      setPlayerId(socket.id);
-    };
-    const onDisconnect = () => setIsConnected(false);
-    const onGameState = (state) => setGameState(state);
-    
-    const onGameCreated = ({ roomCode, gameState }) => {
-        setRoomCode(roomCode);
-        setGameState(gameState);
-        setView('table');
-    };
+    if (error) setLocalError(error);
+  }, [error]);
 
-    const onGameJoined = ({ roomCode, gameState }) => {
-        setRoomCode(roomCode);
-        setGameState(gameState);
-        setView('hand');
-    };
-
-    const onError = (msg) => {
-        alert(msg);
-    };
-
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('game_state_update', onGameState);
-    socket.on('game_created', onGameCreated);
-    socket.on('game_joined', onGameJoined);
-    socket.on('error', onError);
-
-    // If already connected
-    if (socket.connected) {
-      setIsConnected(true);
-      setPlayerId(socket.id);
-    }
-
-    // Check for room in URL
+  // Check for room in URL on mount
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
-    if (roomParam) {
-        setRoomCode(roomParam);
-        // If we have a room param, we might want to auto-join or pre-fill lobby
-        // For now, let's just store it.
-    }
-
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('game_state_update', onGameState);
-      socket.off('game_created', onGameCreated);
-      socket.off('game_joined', onGameJoined);
-      socket.off('error', onError);
-    };
+    // Note: We could auto-fill the lobby input here if we exposed a setter, 
+    // but for now we just let the user type it or we could pass it to Lobby.
   }, []);
 
-  // Auto-redirect based on device if in lobby
-  useEffect(() => {
-    if (view === 'lobby' && isMobile) {
-      // Optional: Auto-select 'join' mode or just show lobby with mobile optimization
-      // For now, we keep the lobby but maybe highlight the join button
-    }
-  }, [isMobile, view]);
-
-  const handleHost = () => {
-    socket.emit('create_game', 'Host');
-  };
-
-  const handleJoin = (name, code) => {
-    setPlayerName(name);
-    // If code is passed (manual entry), use it. Otherwise use state (from URL)
-    const codeToUse = code || roomCode;
-    if (!codeToUse) {
-        alert("Please enter a room code");
-        return;
-    }
-    socket.emit('join_game', { roomCode: codeToUse, playerName: name });
-  };
-
-  const handleStartGame = () => {
-    socket.emit('start_game', roomCode);
-  };
-
-  const handlePlayCard = (cardIndex, valueChoice, declaredCount) => {
-    socket.emit('play_card', { roomCode, cardIndex, valueChoice, declaredCount });
-  };
-
-  const handlePenalty = (targetId) => {
-    socket.emit('assign_penalty', { roomCode, targetId });
+  const handleBack = () => {
+    actions.resetView();
+    onBack();
   };
 
   if (view === 'lobby') {
     return (
       <div className="relative">
+        <Toast message={localError} onClose={() => setLocalError(null)} />
         <button 
-          onClick={onBack}
-          className="absolute top-4 left-4 z-50 text-white bg-black/50 px-4 py-2 rounded hover:bg-black/70"
+          onClick={handleBack}
+          className="absolute top-4 left-4 z-50 text-white bg-black/50 px-4 py-2 rounded hover:bg-black/70 backdrop-blur-sm border border-white/10 transition-colors"
         >
           ← {t('lobby.back')}
         </button>
         <Lobby 
-            onHost={handleHost} 
-            onJoin={handleJoin} 
+            onHost={actions.createGame} 
+            onJoin={actions.joinGame} 
             isMobile={isMobile} 
             initialRoomCode={roomCode}
+            isConnected={isConnected}
         />
       </div>
     );
@@ -137,29 +64,35 @@ function Game99({ onBack }) {
 
   if (view === 'table') {
     return (
-      <GameTable 
-        gameState={gameState} 
-        roomCode={roomCode}
-        onStartGame={handleStartGame} 
-        isConnected={isConnected}
-        onBack={() => setView('lobby')}
-      />
+      <>
+        <Toast message={localError} onClose={() => setLocalError(null)} />
+        <GameTable 
+          gameState={gameState} 
+          roomCode={roomCode}
+          onStartGame={actions.startGame} 
+          isConnected={isConnected}
+          onBack={actions.resetView}
+        />
+      </>
     );
   }
 
   if (view === 'hand') {
     return (
-      <PlayerHand 
-        gameState={gameState} 
-        playerId={playerId} 
-        roomCode={roomCode}
-        onPlayCard={handlePlayCard} 
-        onPenalty={handlePenalty}
-      />
+      <>
+        <Toast message={localError} onClose={() => setLocalError(null)} />
+        <PlayerHand 
+          gameState={gameState} 
+          playerId={playerId} 
+          roomCode={roomCode}
+          onPlayCard={actions.playCard} 
+          onPenalty={actions.assignPenalty}
+        />
+      </>
     );
   }
 
-  return <div>Loading...</div>;
+  return <div className="flex items-center justify-center min-h-screen text-white">Loading...</div>;
 }
 
 function AppContent() {
@@ -195,4 +128,5 @@ function App() {
 }
 
 export default App;
+
 

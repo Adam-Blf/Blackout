@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Beer, Spade, MessageCircle, Info, Globe, 
-  Bus, Triangle, Crown, Circle, Hash, MessageSquare, Hand, Eye, Zap 
+  Bus, Triangle, Crown, Circle, Hash, MessageSquare, Hand, Eye, Zap,
+  Trophy, Ghost, Ban, Dices, Target, Rotate3d, Disc, Search
 } from 'lucide-react';
 import RulesModal from './RulesModal';
 import GameDetailsModal from './GameDetailsModal';
@@ -9,12 +10,14 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { gamesList } from '../data/games';
 
 const iconMap = {
-  Spade, Bus, Triangle, Crown, Circle, Hash, MessageSquare, Hand, Eye, Zap
+  Spade, Bus, Triangle, Crown, Circle, Hash, MessageSquare, Hand, Eye, Zap,
+  Trophy, Ghost, Ban, Dices, Target, Rotate3d, Disc, MessageCircle
 };
 
 export default function Home({ onSelectGame }) {
   const [showRules, setShowRules] = useState(false);
   const [selectedGameDetails, setSelectedGameDetails] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const { t, language, setLanguage } = useLanguage();
 
   const toggleLanguage = () => {
@@ -29,6 +32,13 @@ export default function Home({ onSelectGame }) {
     }
   };
 
+  const filteredGames = useMemo(() => {
+    return gamesList.filter(game => 
+      game.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      game.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]);
+
   return (
     <div className="min-h-screen bg-neutral-900 text-white flex flex-col items-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black relative overflow-x-hidden">
       
@@ -41,15 +51,29 @@ export default function Home({ onSelectGame }) {
         <span className="uppercase font-bold text-sm">{language}</span>
       </button>
 
-      <div className="text-center mt-12 mb-16 animate-in fade-in slide-in-from-top-10 duration-700">
+      <div className="text-center mt-12 mb-12 animate-in fade-in slide-in-from-top-10 duration-700">
         <h1 className="text-7xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
           BLACKOUT
         </h1>
-        <p className="text-xl text-gray-400 font-light tracking-widest uppercase">{t('home.subtitle')}</p>
+        <p className="text-xl text-gray-400 font-light tracking-widest uppercase mb-8">{t('home.subtitle')}</p>
+        
+        {/* Search Bar */}
+        <div className="relative max-w-md mx-auto">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-3 border border-white/10 rounded-xl leading-5 bg-white/5 text-gray-300 placeholder-gray-500 focus:outline-none focus:bg-white/10 focus:border-purple-500 transition-colors sm:text-sm"
+            placeholder="Rechercher un jeu..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 max-w-7xl w-full px-4 pb-20">
-        {gamesList.map((game) => {
+        {filteredGames.map((game) => {
           const Icon = iconMap[game.icon] || Beer;
           const isPlayable = game.isPlayable;
 
@@ -97,6 +121,12 @@ export default function Home({ onSelectGame }) {
             </div>
           );
         })}
+        
+        {filteredGames.length === 0 && (
+          <div className="col-span-full text-center py-12 text-gray-500">
+            Aucun jeu trouvé pour "{searchTerm}"
+          </div>
+        )}
       </div>
 
       <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />

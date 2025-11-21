@@ -7,6 +7,11 @@ const mongoose = require('mongoose');
 const app = express();
 app.use(cors());
 
+// Health Check
+app.get('/', (req, res) => {
+  res.send('Blackout Server is Running');
+});
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://adam:123@99.9kaqkae.mongodb.net/?retryWrites=true&w=majority';
 

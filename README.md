@@ -1,65 +1,5 @@
 # BlackOut 🍻
 
-## 🇬🇧 English
-
-### About BlackOut
-
-**BlackOut** is the ultimate digital hub for drinking games. It brings together rules and playable interfaces for your favorite party games in one place. No more arguing over rules or looking for a deck of cards!
-
-Currently, **Le 99** is the first fully implemented game. More classics like King's Cup and Pyramid are planned for future updates.
-
----
-
-### Available Games
-
-#### 1. Le 99 (The 99)
-
-A digital version of the famous card game "99" adapted as a drinking game. Players take turns playing cards to add to a central count. The goal is to avoid making the count go over 99.
-
-##### Rules
-
-- **Objective**: Do not be the player who makes the count exceed 99.
-- **Setup**: Each player starts with 3 cards.
-- **Gameplay**:
-  - Play a card, add its value to the count.
-  - Draw a new card.
-  - If you cannot play without exceeding 99, you lose (and drink!).
-
-##### Special Cards
-
-- **Ace (A)**: +1 or +11 (Player's choice).
-- **9**: +0 (Pass turn).
-- **10**: -10 to the count.
-- **Jack (J)**: Set count to 99 instantly.
-- **Queen (Q)**: +10.
-- **King (K)**: Set count to 70.
-- **Joker**: Choose a value between 1 and 9.
-
-##### Drinking Rules
-
-- **Social**: If a player plays a card that brings the count to a multiple of 11 (11, 22, 33...), everyone drinks 1 sip.
-- **Reverse**: If a Queen is played, the direction of play reverses.
-- **Loss**: The player who busts 99 finishes their drink.
-
----
-
-### Roadmap
-
-- [x] **BlackOut Platform Foundation**
-- [x] **Game: Le 99**
-  - [x] Basic Game Logic (Server)
-  - [x] Real-time Multiplayer (Socket.io)
-  - [x] Mobile Controller Interface
-  - [x] Desktop Host Interface
-- [ ] **Game: King's Cup** (Coming Soon)
-- [ ] **Game: Pyramid** (Coming Soon)
-- [ ] Custom Rules Configuration
-- [ ] Player Avatars & Profiles
-- [ ] Drinking Statistics Dashboard
-
----
----
-
 ## 🇫🇷 Français
 
 ### À propos de BlackOut
@@ -116,3 +56,63 @@ Une version numérique du célèbre jeu de cartes "99" adapté en jeu à boire. 
 - [ ] Configuration des règles personnalisées
 - [ ] Avatars et Profils des joueurs
 - [ ] Tableau de bord des statistiques de boisson
+
+---
+---
+
+## 🇬🇧 English
+
+### About BlackOut
+
+**BlackOut** is the ultimate digital hub for drinking games. It brings together rules and playable interfaces for your favorite party games in one place. No more arguing over rules or looking for a deck of cards!
+
+Currently, **Le 99** is the first fully implemented game. More classics like King's Cup and Pyramid are planned for future updates.
+
+---
+
+### Available Games
+
+#### 1. Le 99 (The 99)
+
+A digital version of the famous card game "99" adapted as a drinking game. Players take turns playing cards to add to a central count. The goal is to avoid making the count go over 99.
+
+##### Rules
+
+- **Objective**: Do not be the player who makes the count exceed 99.
+- **Setup**: Each player starts with 3 cards.
+- **Gameplay**:
+  - Play a card, add its value to the count.
+  - Draw a new card.
+  - If you cannot play without exceeding 99, you lose (and drink!).
+
+##### Special Cards
+
+- **Ace (A)**: +1 or +11 (Player's choice).
+- **9**: +0 (Pass turn).
+- **10**: -10 to the count.
+- **Jack (J)**: Set count to 99 instantly.
+- **Queen (Q)**: +10.
+- **King (K)**: Set count to 70.
+- **Joker**: Choose a value between 1 and 9.
+
+##### Drinking Rules
+
+- **Social**: If a player plays a card that brings the count to a multiple of 11 (11, 22, 33...), everyone drinks 1 sip.
+- **Reverse**: If a Queen is played, the direction of play reverses.
+- **Loss**: The player who busts 99 finishes their drink.
+
+---
+
+### Roadmap
+
+- [x] **BlackOut Platform Foundation**
+- [x] **Game: Le 99**
+  - [x] Basic Game Logic (Server)
+  - [x] Real-time Multiplayer (Socket.io)
+  - [x] Mobile Controller Interface
+  - [x] Desktop Host Interface
+- [ ] **Game: King's Cup** (Coming Soon)
+- [ ] **Game: Pyramid** (Coming Soon)
+- [ ] Custom Rules Configuration
+- [ ] Player Avatars & Profiles
+- [ ] Drinking Statistics Dashboard

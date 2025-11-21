@@ -7,7 +7,10 @@ export const useGameSocket = () => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState(null);
-  const [roomCode, setRoomCode] = useState('');
+  const [roomCode, setRoomCode] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('room') || '';
+  });
   const [playerId, setPlayerId] = useState('');
   const [error, setError] = useState(null);
   const [view, setView] = useState('lobby'); // lobby, table, hand

@@ -6,7 +6,8 @@ import PlayerHand from './components/PlayerHand';
 import Home from './components/Home';
 
 // Connect to server (assume localhost:3001 for dev, or relative for prod)
-const socket = io(window.location.hostname === 'localhost' ? 'http://localhost:3001' : '/');
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '/');
+const socket = io(SERVER_URL);
 
 function Game99({ onBack }) {
   const [view, setView] = useState('lobby'); // lobby, table, hand

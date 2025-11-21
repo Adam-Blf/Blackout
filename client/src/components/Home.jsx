@@ -1,5 +1,5 @@
 import React from 'react';
-import { Beer, Spade } from 'lucide-react';
+import { Beer, Spade, MessageCircle } from 'lucide-react';
 
 export default function Home({ onSelectGame }) {
   return (
@@ -26,6 +26,20 @@ export default function Home({ onSelectGame }) {
             <p className="text-gray-400 mb-4">Don't let the count exceed 99. Use special cards to survive!</p>
             <span className="px-4 py-2 bg-purple-600 rounded-full text-sm font-bold group-hover:bg-purple-500 transition-colors">
               Play Now
+            </span>
+          </div>
+        </div>
+
+        {/* Truth or Dare Card (In Dev) */}
+        <div className="bg-neutral-800/50 rounded-2xl p-6 border border-neutral-800 opacity-75 cursor-not-allowed">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-pink-900/30 rounded-full flex items-center justify-center mb-4">
+              <MessageCircle className="w-8 h-8 text-pink-400" />
+            </div>
+            <h3 className="text-2xl font-bold mb-2">Truth or Dare</h3>
+            <p className="text-gray-500 mb-4">Spill the tea or do the deed. In development.</p>
+            <span className="px-4 py-2 bg-pink-900/50 rounded-full text-sm font-bold text-pink-400 border border-pink-800">
+              In Dev
             </span>
           </div>
         </div>

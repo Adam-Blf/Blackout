@@ -6,7 +6,7 @@
 
 **BlackOut** est le hub numérique ultime pour les jeux à boire. Il rassemble les règles et les interfaces de jeu pour vos jeux de soirée préférés en un seul endroit. Plus besoin de se disputer sur les règles ou de chercher un jeu de cartes !
 
-Actuellement, **Le 99** est le premier jeu entièrement implémenté. D'autres classiques comme le King's Cup et la Pyramide sont prévus pour les futures mises à jour.
+Actuellement, **Le 99** est le premier jeu entièrement implémenté. **Action ou Vérité** est en cours de développement. D'autres classiques comme le King's Cup et la Pyramide sont prévus pour les futures mises à jour.
 
 ---
 
@@ -51,6 +51,7 @@ Une version numérique du célèbre jeu de cartes "99" adapté en jeu à boire. 
   - [x] Multijoueur temps réel (Socket.io)
   - [x] Interface Contrôleur Mobile
   - [x] Interface Hôte Bureau
+- [ ] **Jeu : Action ou Vérité** (En cours de développement)
 - [ ] **Jeu : King's Cup** (Bientôt)
 - [ ] **Jeu : Pyramide** (Bientôt)
 - [ ] Configuration des règles personnalisées
@@ -66,7 +67,7 @@ Une version numérique du célèbre jeu de cartes "99" adapté en jeu à boire. 
 
 **BlackOut** is the ultimate digital hub for drinking games. It brings together rules and playable interfaces for your favorite party games in one place. No more arguing over rules or looking for a deck of cards!
 
-Currently, **Le 99** is the first fully implemented game. More classics like King's Cup and Pyramid are planned for future updates.
+Currently, **Le 99** is the first fully implemented game. **Truth or Dare** is currently in development. More classics like King's Cup and Pyramid are planned for future updates.
 
 ---
 
@@ -111,6 +112,7 @@ A digital version of the famous card game "99" adapted as a drinking game. Playe
   - [x] Real-time Multiplayer (Socket.io)
   - [x] Mobile Controller Interface
   - [x] Desktop Host Interface
+- [ ] **Game: Truth or Dare** (In Development)
 - [ ] **Game: King's Cup** (Coming Soon)
 - [ ] **Game: Pyramid** (Coming Soon)
 - [ ] Custom Rules Configuration

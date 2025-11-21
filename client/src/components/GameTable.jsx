@@ -5,7 +5,7 @@ import Card from './Card';
 import RulesModal from './RulesModal';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function GameTable({ gameState, onStartGame, isConnected, onBack }) {
+export default function GameTable({ gameState, roomCode, onStartGame, isConnected, onBack }) {
   const [showRules, setShowRules] = useState(false);
   const [copied, setCopied] = useState(false);
   const { t } = useLanguage();
@@ -38,7 +38,7 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
 
   // Use window.location.origin to get protocol + hostname + port (if any)
   // Add ?game=99 parameter to skip the hub
-  const joinUrl = `${window.location.origin}?game=99`;
+  const joinUrl = `${window.location.origin}?game=99&room=${roomCode}`;
 
   const copyLink = () => {
     navigator.clipboard.writeText(joinUrl);
@@ -55,6 +55,7 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
           <div>
             <h1 className="text-2xl font-bold text-gold drop-shadow-md">{t('lobby.title')}</h1>
             <div className="text-sm opacity-70">{gameStatus === 'waiting' ? t('game.waiting') : t('game.playing')}</div>
+            {roomCode && <div className="text-xs font-mono bg-black/30 px-2 py-1 rounded mt-1">Room: {roomCode}</div>}
           </div>
         </div>
         <div className="flex gap-4">
@@ -95,7 +96,7 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
             /* Playing State: Count & Direction */
             <>
               <div className="text-center z-10">
-                <div className="text-8xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{currentCount}</div>
+                <div className="text-8xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">???</div>
                 <div className="text-gold uppercase tracking-widest mt-2 font-bold text-sm">{t('game.count')}</div>
               </div>
 
@@ -169,6 +170,23 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
           <div className="text-3xl text-white font-bold bg-casino-red px-12 py-6 rounded-2xl animate-pulse shadow-[0_0_50px_rgba(220,38,38,0.5)] border-4 border-red-500">
             {t('game.culsec')}
           </div>
+          
+          {/* Penalty Summary */}
+          <div className="mt-8 bg-white/10 p-6 rounded-xl backdrop-blur-md w-full max-w-md">
+            <h3 className="text-2xl font-bold text-gold mb-4">Final Results</h3>
+            <div className="space-y-2">
+                {players.sort((a, b) => b.penalties - a.penalties).map(p => (
+                    <div key={p.id} className="flex justify-between items-center border-b border-white/10 pb-2">
+                        <span className="text-xl">{p.name}</span>
+                        <div className="text-right">
+                            <div className="text-sm text-red-400">{p.penalties} Errors</div>
+                            <div className="text-xl font-bold text-gold">{p.sips} Sips</div>
+                        </div>
+                    </div>
+                ))}
+            </div>
+          </div>
+
           <button 
             onClick={onStartGame}
             className="mt-12 bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-gray-200 transition-colors text-xl"

@@ -3,15 +3,16 @@ import Card from './Card';
 import { AlertTriangle, Info } from 'lucide-react';
 import RulesModal from './RulesModal';
 
-export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty }) {
+export default function PlayerHand({ gameState, playerId, roomCode, onPlayCard, onPenalty }) {
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
   const [showValueModal, setShowValueModal] = useState(false);
-  const [modalType, setModalType] = useState(''); // 'A' or 'Joker'
+  const [modalType, setModalType] = useState(''); // 'A', 'Joker', or 'Standard'
+  const [declaredCount, setDeclaredCount] = useState('');
   const [showRules, setShowRules] = useState(false);
 
   if (!gameState) return <div className="p-4">Connecting...</div>;
 
-  const { players, currentPlayerIndex, gameStatus, currentCount, message } = gameState;
+  const { players, currentPlayerIndex, gameStatus, message } = gameState;
   const player = players.find(p => p.id === playerId);
   const isMyTurn = players[currentPlayerIndex]?.id === playerId && gameStatus === 'playing';
 
@@ -21,21 +22,25 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
     if (!isMyTurn) return;
     const card = player.hand[index];
     
+    setSelectedCardIndex(index);
+    setDeclaredCount(''); // Reset input
+
     if (card.value === 'A') {
-      setSelectedCardIndex(index);
       setModalType('A');
-      setShowValueModal(true);
     } else if (card.value === 'Joker') {
-      setSelectedCardIndex(index);
       setModalType('Joker');
-      setShowValueModal(true);
     } else {
-      onPlayCard(index);
+      setModalType('Standard');
     }
+    setShowValueModal(true);
   };
 
   const handleValueSubmit = (val) => {
-    onPlayCard(selectedCardIndex, val);
+    if (!declaredCount) {
+        alert("Please enter the new count!");
+        return;
+    }
+    onPlayCard(selectedCardIndex, val, declaredCount);
     setShowValueModal(false);
     setSelectedCardIndex(null);
   };
@@ -45,8 +50,8 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
       {/* Top Info */}
       <div className="p-4 bg-black/20 flex justify-between items-center">
         <div>
-          <div className="text-xs opacity-70">Current Count</div>
-          <div className="text-4xl font-bold text-gold">{currentCount}</div>
+          <div className="text-xs opacity-70">Room: {roomCode}</div>
+          <div className="text-xl font-bold text-gold">Count: ???</div>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -120,16 +125,28 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
           <div className="bg-white text-black p-6 rounded-xl w-full max-w-sm">
             <h3 className="text-xl font-bold mb-4">
-              {modalType === 'A' ? 'Choose Ace Value' : 'Choose Joker Value'}
+              {modalType === 'A' ? 'Choose Ace Value' : modalType === 'Joker' ? 'Choose Joker Value' : 'Confirm Play'}
             </h3>
             
+            <div className="mb-4">
+                <label className="block text-sm font-bold mb-2">What is the new count?</label>
+                <input 
+                    type="number" 
+                    value={declaredCount}
+                    onChange={(e) => setDeclaredCount(e.target.value)}
+                    className="w-full p-3 border-2 border-black rounded text-xl font-bold text-center"
+                    placeholder="???"
+                    autoFocus
+                />
+            </div>
+
             <div className="grid grid-cols-3 gap-2">
               {modalType === 'A' ? (
                 <>
                   <button onClick={() => handleValueSubmit(1)} className="p-4 bg-gray-200 rounded font-bold hover:bg-gold">1</button>
                   <button onClick={() => handleValueSubmit(11)} className="p-4 bg-gray-200 rounded font-bold hover:bg-gold">11</button>
                 </>
-              ) : (
+              ) : modalType === 'Joker' ? (
                 [1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                   <button 
                     key={num} 
@@ -139,6 +156,13 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
                     {num}
                   </button>
                 ))
+              ) : (
+                <button 
+                    onClick={() => handleValueSubmit(null)}
+                    className="col-span-3 p-4 bg-gold rounded font-bold hover:bg-yellow-500"
+                >
+                    Play Card
+                </button>
               )}
             </div>
             

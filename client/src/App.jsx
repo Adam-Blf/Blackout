@@ -20,6 +20,7 @@ function Game99({ onBack }) {
   const [gameState, setGameState] = useState(null);
   const [playerName, setPlayerName] = useState('');
   const [playerId, setPlayerId] = useState('');
+  const [roomCode, setRoomCode] = useState('');
   const [isConnected, setIsConnected] = useState(socket.connected);
   const { isMobile } = useDeviceDetect();
   const { t } = useLanguage();
@@ -31,10 +32,29 @@ function Game99({ onBack }) {
     };
     const onDisconnect = () => setIsConnected(false);
     const onGameState = (state) => setGameState(state);
+    
+    const onGameCreated = ({ roomCode, gameState }) => {
+        setRoomCode(roomCode);
+        setGameState(gameState);
+        setView('table');
+    };
+
+    const onGameJoined = ({ roomCode, gameState }) => {
+        setRoomCode(roomCode);
+        setGameState(gameState);
+        setView('hand');
+    };
+
+    const onError = (msg) => {
+        alert(msg);
+    };
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
     socket.on('game_state_update', onGameState);
+    socket.on('game_created', onGameCreated);
+    socket.on('game_joined', onGameJoined);
+    socket.on('error', onError);
 
     // If already connected
     if (socket.connected) {
@@ -42,13 +62,22 @@ function Game99({ onBack }) {
       setPlayerId(socket.id);
     }
 
-    // Request state immediately in case we missed the initial one
-    socket.emit('request_game_state');
+    // Check for room in URL
+    const params = new URLSearchParams(window.location.search);
+    const roomParam = params.get('room');
+    if (roomParam) {
+        setRoomCode(roomParam);
+        // If we have a room param, we might want to auto-join or pre-fill lobby
+        // For now, let's just store it.
+    }
 
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('game_state_update', onGameState);
+      socket.off('game_created', onGameCreated);
+      socket.off('game_joined', onGameJoined);
+      socket.off('error', onError);
     };
   }, []);
 
@@ -61,25 +90,30 @@ function Game99({ onBack }) {
   }, [isMobile, view]);
 
   const handleHost = () => {
-    setView('table');
+    socket.emit('create_game', 'Host');
   };
 
-  const handleJoin = (name) => {
+  const handleJoin = (name, code) => {
     setPlayerName(name);
-    socket.emit('join_game', name);
-    setView('hand');
+    // If code is passed (manual entry), use it. Otherwise use state (from URL)
+    const codeToUse = code || roomCode;
+    if (!codeToUse) {
+        alert("Please enter a room code");
+        return;
+    }
+    socket.emit('join_game', { roomCode: codeToUse, playerName: name });
   };
 
   const handleStartGame = () => {
-    socket.emit('start_game');
+    socket.emit('start_game', roomCode);
   };
 
-  const handlePlayCard = (cardIndex, valueChoice) => {
-    socket.emit('play_card', { cardIndex, valueChoice });
+  const handlePlayCard = (cardIndex, valueChoice, declaredCount) => {
+    socket.emit('play_card', { roomCode, cardIndex, valueChoice, declaredCount });
   };
 
   const handlePenalty = (targetId) => {
-    socket.emit('assign_penalty', { targetId });
+    socket.emit('assign_penalty', { roomCode, targetId });
   };
 
   if (view === 'lobby') {
@@ -91,7 +125,12 @@ function Game99({ onBack }) {
         >
           ← {t('lobby.back')}
         </button>
-        <Lobby onHost={handleHost} onJoin={handleJoin} isMobile={isMobile} />
+        <Lobby 
+            onHost={handleHost} 
+            onJoin={handleJoin} 
+            isMobile={isMobile} 
+            initialRoomCode={roomCode}
+        />
       </div>
     );
   }
@@ -100,6 +139,7 @@ function Game99({ onBack }) {
     return (
       <GameTable 
         gameState={gameState} 
+        roomCode={roomCode}
         onStartGame={handleStartGame} 
         isConnected={isConnected}
         onBack={() => setView('lobby')}
@@ -112,6 +152,7 @@ function Game99({ onBack }) {
       <PlayerHand 
         gameState={gameState} 
         playerId={playerId} 
+        roomCode={roomCode}
         onPlayCard={handlePlayCard} 
         onPenalty={handlePenalty}
       />

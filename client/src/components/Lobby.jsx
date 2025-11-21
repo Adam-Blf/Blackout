@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Beer } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function Lobby({ onHost, onJoin, isMobile }) {
+export default function Lobby({ onHost, onJoin, isMobile, initialRoomCode }) {
   const [name, setName] = useState('');
+  const [roomCode, setRoomCode] = useState(initialRoomCode || '');
   const { t } = useLanguage();
 
   return (
@@ -25,10 +26,23 @@ export default function Lobby({ onHost, onJoin, isMobile }) {
             placeholder={t('lobby.namePlaceholder')}
           />
         </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">Room Code</label>
+          <input 
+            type="text" 
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
+            className="w-full px-4 py-2 rounded bg-white/10 border border-white/20 focus:outline-none focus:border-gold"
+            placeholder="123456"
+            maxLength={6}
+          />
+        </div>
         
         <button 
-          onClick={() => name && onJoin(name)}
-          className="w-full bg-gold text-black font-bold py-3 rounded hover:bg-yellow-400 transition"
+          onClick={() => name && roomCode && onJoin(name, roomCode)}
+          className="w-full bg-gold text-black font-bold py-3 rounded hover:bg-yellow-400 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!name || !roomCode}
         >
           {t('lobby.join')}
         </button>

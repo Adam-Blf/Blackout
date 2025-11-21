@@ -3,11 +3,33 @@ import QRCode from 'react-qr-code';
 import { ArrowRight, ArrowLeft, Beer, Info } from 'lucide-react';
 import Card from './Card';
 import RulesModal from './RulesModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
-export default function GameTable({ gameState, onStartGame }) {
+export default function GameTable({ gameState, onStartGame, isConnected, onBack }) {
   const [showRules, setShowRules] = useState(false);
+  const { t } = useLanguage();
 
-  if (!gameState) return <div>Connecting...</div>;
+  if (!isConnected) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-casino-green text-white">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gold mb-4"></div>
+        <div className="text-xl font-bold">{t('game.connecting')}</div>
+        <div className="text-sm opacity-70 mt-2">{t('game.connectionError')}</div>
+        <button onClick={onBack} className="mt-8 px-6 py-2 bg-black/30 rounded hover:bg-black/50">
+          {t('lobby.back')}
+        </button>
+      </div>
+    );
+  }
+
+  if (!gameState) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-casino-green text-white">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-gold mb-4"></div>
+        <div className="text-xl font-bold">{t('game.waiting')}</div>
+      </div>
+    );
+  }
 
   const { players, currentCount, direction, currentPlayerIndex, gameStatus, discardPile, message, winner } = gameState;
   const currentPlayer = players[currentPlayerIndex];
@@ -22,8 +44,8 @@ export default function GameTable({ gameState, onStartGame }) {
         <div className="flex items-center gap-4">
           <img src="/Logo 99.svg" alt="Logo" className="w-16 h-16 drop-shadow-lg" />
           <div>
-            <h1 className="text-2xl font-bold text-gold drop-shadow-md">Le 99</h1>
-            <div className="text-sm opacity-70">{gameStatus === 'waiting' ? 'Waiting for players...' : 'Game in progress'}</div>
+            <h1 className="text-2xl font-bold text-gold drop-shadow-md">{t('lobby.title')}</h1>
+            <div className="text-sm opacity-70">{gameStatus === 'waiting' ? t('game.waiting') : t('game.playing')}</div>
           </div>
         </div>
         <div className="flex gap-4">
@@ -36,7 +58,7 @@ export default function GameTable({ gameState, onStartGame }) {
           {gameStatus === 'waiting' && (
             <div className="bg-white p-2 rounded shadow-xl">
               <QRCode value={joinUrl} size={100} />
-              <div className="text-black text-xs text-center mt-1 font-bold">SCAN TO JOIN</div>
+              <div className="text-black text-xs text-center mt-1 font-bold">{t('game.scan')}</div>
             </div>
           )}
         </div>
@@ -51,7 +73,7 @@ export default function GameTable({ gameState, onStartGame }) {
           {/* Count */}
           <div className="text-center z-10">
             <div className="text-8xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{currentCount}</div>
-            <div className="text-gold uppercase tracking-widest mt-2 font-bold text-sm">Current Count</div>
+            <div className="text-gold uppercase tracking-widest mt-2 font-bold text-sm">{t('game.count')}</div>
           </div>
 
           {/* Direction */}
@@ -112,7 +134,7 @@ export default function GameTable({ gameState, onStartGame }) {
             onClick={onStartGame}
             className="bg-gradient-to-r from-gold to-yellow-500 text-black px-10 py-4 rounded-full font-black text-2xl shadow-[0_0_30px_rgba(255,215,0,0.4)] hover:scale-105 hover:shadow-[0_0_50px_rgba(255,215,0,0.6)] transition-all animate-bounce"
           >
-            START GAME
+            {t('game.start')}
           </button>
         </div>
       )}
@@ -120,16 +142,16 @@ export default function GameTable({ gameState, onStartGame }) {
       {/* Winner Overlay */}
       {gameStatus === 'gameover' && winner && (
         <div className="absolute inset-0 bg-black/90 z-50 flex flex-col items-center justify-center text-center animate-in fade-in duration-500">
-          <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-gold to-yellow-700 mb-4 drop-shadow-lg">WINNER!</h1>
-          <div className="text-4xl mb-8 text-white">{winner.name} reached 99!</div>
+          <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-gold to-yellow-700 mb-4 drop-shadow-lg">{t('game.winner')}</h1>
+          <div className="text-4xl mb-8 text-white">{winner.name} {t('game.reached')}</div>
           <div className="text-3xl text-white font-bold bg-casino-red px-12 py-6 rounded-2xl animate-pulse shadow-[0_0_50px_rgba(220,38,38,0.5)] border-4 border-red-500">
-            EVERYONE ELSE: CUL SEC!
+            {t('game.culsec')}
           </div>
           <button 
             onClick={onStartGame}
             className="mt-12 bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-gray-200 transition-colors text-xl"
           >
-            Play Again
+            {t('game.playAgain')}
           </button>
         </div>
       )}

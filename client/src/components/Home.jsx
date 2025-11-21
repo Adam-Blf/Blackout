@@ -1,17 +1,33 @@
 import React, { useState } from 'react';
-import { Beer, Spade, MessageCircle, Info } from 'lucide-react';
+import { Beer, Spade, MessageCircle, Info, Globe } from 'lucide-react';
 import RulesModal from './RulesModal';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function Home({ onSelectGame }) {
   const [showRules, setShowRules] = useState(false);
+  const { t, language, setLanguage } = useLanguage();
+
+  const toggleLanguage = () => {
+    setLanguage(language === 'fr' ? 'en' : 'fr');
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-900 text-white flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black">
+    <div className="min-h-screen bg-neutral-900 text-white flex flex-col items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-neutral-800 via-neutral-900 to-black relative">
+      
+      {/* Language Toggle */}
+      <button 
+        onClick={toggleLanguage}
+        className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors backdrop-blur-sm border border-white/10"
+      >
+        <Globe size={16} />
+        <span className="uppercase font-bold text-sm">{language}</span>
+      </button>
+
       <div className="text-center mb-16 animate-in fade-in slide-in-from-top-10 duration-700">
         <h1 className="text-7xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
           BLACKOUT
         </h1>
-        <p className="text-xl text-gray-400 font-light tracking-widest uppercase">Choose your poison</p>
+        <p className="text-xl text-gray-400 font-light tracking-widest uppercase">{t('home.subtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl w-full px-4">
@@ -22,8 +38,8 @@ export default function Home({ onSelectGame }) {
             <div className="w-20 h-20 bg-purple-900/30 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 border border-purple-500/30">
               <Spade className="w-10 h-10 text-purple-400" />
             </div>
-            <h3 className="text-3xl font-bold mb-3 text-white">Le 99</h3>
-            <p className="text-gray-400 mb-8 text-sm leading-relaxed">Don't let the count exceed 99. Use special cards to survive and make others drink!</p>
+            <h3 className="text-3xl font-bold mb-3 text-white">{t('lobby.title')}</h3>
+            <p className="text-gray-400 mb-8 text-sm leading-relaxed">{t('rules.objectiveText')}</p>
             
             <div className="mt-auto flex gap-3 w-full">
               <button 
@@ -35,7 +51,7 @@ export default function Home({ onSelectGame }) {
               <button 
                 onClick={(e) => { e.stopPropagation(); setShowRules(true); }}
                 className="px-4 py-3 bg-neutral-800 rounded-xl text-gray-400 hover:text-white hover:bg-neutral-700 transition-colors border border-white/10"
-                title="Rules"
+                title={t('home.rules')}
               >
                 <Info size={20} />
               </button>
@@ -53,7 +69,7 @@ export default function Home({ onSelectGame }) {
             <p className="text-gray-600 mb-8 text-sm">Spill the tea or do the deed. The ultimate party starter.</p>
             <div className="mt-auto w-full">
               <span className="block w-full py-3 bg-pink-900/20 rounded-xl text-sm font-bold text-pink-400 border border-pink-900/50 tracking-wider uppercase">
-                In Development
+                {t('home.dev')}
               </span>
             </div>
           </div>

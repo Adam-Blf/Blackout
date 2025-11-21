@@ -1,7 +1,9 @@
 import React from 'react';
 import { X, Scroll, Beer, AlertTriangle } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function RulesModal({ isOpen, onClose }) {
+  const { t } = useLanguage();
   if (!isOpen) return null;
 
   return (
@@ -12,7 +14,7 @@ export default function RulesModal({ isOpen, onClose }) {
         <div className="sticky top-0 z-10 flex items-center justify-between p-4 bg-neutral-900 border-b border-white/10">
           <div className="flex items-center gap-2 text-gold">
             <Scroll className="w-6 h-6" />
-            <h2 className="text-2xl font-bold font-serif tracking-wider">OFFICIAL RULES</h2>
+            <h2 className="text-2xl font-bold font-serif tracking-wider">{t('rules.title')}</h2>
           </div>
           <button 
             onClick={onClose}
@@ -29,10 +31,10 @@ export default function RulesModal({ isOpen, onClose }) {
           <section>
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-gold text-black flex items-center justify-center text-sm font-black">1</span>
-              The Objective
+              {t('rules.objective')}
             </h3>
             <p className="pl-10">
-              Keep the central count <strong>below 99</strong>. If you cannot play a card without exceeding 99, you lose the round and must finish your drink!
+              {t('rules.objectiveText')}
             </p>
           </section>
 
@@ -40,49 +42,42 @@ export default function RulesModal({ isOpen, onClose }) {
           <section>
             <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-gold text-black flex items-center justify-center text-sm font-black">2</span>
-              Special Cards
+              {t('rules.values')}
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-2">
               <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
                 <div className="font-bold text-gold text-xl w-8">A</div>
                 <div>
                   <div className="font-bold text-white">Ace</div>
-                  <div className="text-sm">+1 or +11 (Your choice)</div>
+                  <div className="text-sm">{t('rules.ace')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                <div className="font-bold text-gold text-xl w-8">9</div>
+                <div className="font-bold text-gold text-xl w-8">Joker</div>
                 <div>
-                  <div className="font-bold text-white">Nine</div>
-                  <div className="text-sm">+0 (Pass your turn)</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
-                <div className="font-bold text-gold text-xl w-8">10</div>
-                <div>
-                  <div className="font-bold text-white">Ten</div>
-                  <div className="text-sm">-10 to the count</div>
+                  <div className="font-bold text-white">Joker</div>
+                  <div className="text-sm">{t('rules.joker')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
                 <div className="font-bold text-gold text-xl w-8">J</div>
                 <div>
                   <div className="font-bold text-white">Jack</div>
-                  <div className="text-sm">Set count to 99 instantly</div>
+                  <div className="text-sm">{t('rules.jack')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
                 <div className="font-bold text-gold text-xl w-8">Q</div>
                 <div>
                   <div className="font-bold text-white">Queen</div>
-                  <div className="text-sm">+10 & Reverse direction</div>
+                  <div className="text-sm">{t('rules.queen')}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-white/5 rounded-lg border border-white/5">
                 <div className="font-bold text-gold text-xl w-8">K</div>
                 <div>
                   <div className="font-bold text-white">King</div>
-                  <div className="text-sm">Set count to 70</div>
+                  <div className="text-sm">{t('rules.king')}</div>
                 </div>
               </div>
             </div>
@@ -92,16 +87,12 @@ export default function RulesModal({ isOpen, onClose }) {
           <section>
             <h3 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
               <span className="w-8 h-8 rounded-full bg-casino-red text-white flex items-center justify-center text-sm font-black">3</span>
-              Drinking Rules
+              {t('rules.penalty')}
             </h3>
             <div className="pl-10 space-y-3">
               <div className="flex items-start gap-3">
-                <Beer className="w-5 h-5 text-gold shrink-0 mt-1" />
-                <p><strong className="text-white">Social Drink:</strong> If the count lands on a multiple of 11 (11, 22, 33...), everyone drinks!</p>
-              </div>
-              <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-casino-red shrink-0 mt-1" />
-                <p><strong className="text-white">Game Over:</strong> The player who busts 99 finishes their drink.</p>
+                <p><strong className="text-white">{t('rules.penaltyText')}</strong></p>
               </div>
             </div>
           </section>
@@ -114,7 +105,7 @@ export default function RulesModal({ isOpen, onClose }) {
             onClick={onClose}
             className="px-8 py-2 bg-gold text-black font-bold rounded-full hover:bg-yellow-400 transition-colors shadow-lg shadow-gold/20"
           >
-            GOT IT
+            {t('rules.close')}
           </button>
         </div>
       </div>

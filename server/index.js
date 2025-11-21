@@ -88,6 +88,7 @@ io.on('connection', (socket) => {
     const roomCode = generateRoomCode();
     games[roomCode] = {
       roomCode,
+      hostId: socket.id,
       players: [],
       deck: [],
       discardPile: [],
@@ -104,16 +105,7 @@ io.on('connection', (socket) => {
 
     socket.join(roomCode);
     
-    const newPlayer = {
-      id: socket.id,
-      name: playerName || `Host`,
-      hand: [],
-      sips: 0,
-      penalties: 0,
-      isHost: true
-    };
-    
-    games[roomCode].players.push(newPlayer);
+    // Host is no longer a player
     
     socket.emit('game_created', { roomCode, gameState: games[roomCode] });
     io.to(roomCode).emit('game_state_update', games[roomCode]);
@@ -160,8 +152,7 @@ io.on('connection', (socket) => {
     if (!game) return;
 
     // Check if sender is host
-    const player = game.players.find(p => p.id === socket.id);
-    if (!player || !player.isHost) return;
+    if (game.hostId !== socket.id) return;
 
     if (game.players.length < 2) { 
         // For strict rules: if (game.players.length < 4) return;
@@ -312,6 +303,14 @@ io.on('connection', (socket) => {
     // Find which game the user was in
     for (const roomCode in games) {
         const game = games[roomCode];
+        
+        if (game.hostId === socket.id) {
+            // Host disconnected, end game
+            delete games[roomCode];
+            io.to(roomCode).emit('error', 'Host disconnected. Game ended.');
+            break;
+        }
+
         const playerIndex = game.players.findIndex(p => p.id === socket.id);
         
         if (playerIndex !== -1) {

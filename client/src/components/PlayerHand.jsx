@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import Card from './Card';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
+import RulesModal from './RulesModal';
 
 export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty }) {
   const [selectedCardIndex, setSelectedCardIndex] = useState(null);
   const [showValueModal, setShowValueModal] = useState(false);
   const [modalType, setModalType] = useState(''); // 'A' or 'Joker'
+  const [showRules, setShowRules] = useState(false);
 
   if (!gameState) return <div className="p-4">Connecting...</div>;
 
@@ -46,9 +48,17 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
           <div className="text-xs opacity-70">Current Count</div>
           <div className="text-4xl font-bold text-gold">{currentCount}</div>
         </div>
-        <div className="text-right">
-          <div className="font-bold">{player.name}</div>
-          <div className="text-xs text-casino-red font-bold">{player.sips} Sips</div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowRules(true)}
+            className="p-2 bg-black/20 rounded-full text-white/70 hover:text-white"
+          >
+            <Info size={20} />
+          </button>
+          <div className="text-right">
+            <div className="font-bold">{player.name}</div>
+            <div className="text-xs text-casino-red font-bold">{player.sips} Sips</div>
+          </div>
         </div>
       </div>
 
@@ -141,6 +151,8 @@ export default function PlayerHand({ gameState, playerId, onPlayCard, onPenalty 
           </div>
         </div>
       )}
+
+      <RulesModal isOpen={showRules} onClose={() => setShowRules(false)} />
     </div>
   );
 }

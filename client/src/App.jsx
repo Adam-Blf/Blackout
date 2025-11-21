@@ -42,6 +42,9 @@ function Game99({ onBack }) {
       setPlayerId(socket.id);
     }
 
+    // Request state immediately in case we missed the initial one
+    socket.emit('request_game_state');
+
     return () => {
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);

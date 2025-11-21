@@ -83,6 +83,10 @@ io.on('connection', (socket) => {
     io.emit('game_state_update', gameState);
   });
 
+  socket.on('request_game_state', () => {
+    socket.emit('game_state_update', gameState);
+  });
+
   socket.on('start_game', () => {
     if (gameState.players.length < 2) { // Rules say 4+, but for dev allow 2
         // For strict rules: if (gameState.players.length < 4) return;

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import QRCode from 'react-qr-code';
-import { ArrowRight, ArrowLeft, Beer, Info } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Beer, Info, Copy, Check } from 'lucide-react';
 import Card from './Card';
 import RulesModal from './RulesModal';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function GameTable({ gameState, onStartGame, isConnected, onBack }) {
   const [showRules, setShowRules] = useState(false);
+  const [copied, setCopied] = useState(false);
   const { t } = useLanguage();
 
   if (!isConnected) {
@@ -37,6 +38,12 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
 
   const joinUrl = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
 
+  const copyLink = () => {
+    navigator.clipboard.writeText(joinUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex flex-col h-screen p-4 overflow-hidden bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-casino-green via-[#064025] to-black">
       {/* Header */}
@@ -55,12 +62,6 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
           >
             <Info />
           </button>
-          {gameStatus === 'waiting' && (
-            <div className="bg-white p-2 rounded shadow-xl">
-              <QRCode value={joinUrl} size={100} />
-              <div className="text-black text-xs text-center mt-1 font-bold">{t('game.scan')}</div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -70,23 +71,42 @@ export default function GameTable({ gameState, onStartGame, isConnected, onBack 
         {/* Center Circle */}
         <div className="relative w-96 h-96 rounded-full border-8 border-gold/30 flex items-center justify-center bg-black/40 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.5)]">
           
-          {/* Count */}
-          <div className="text-center z-10">
-            <div className="text-8xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{currentCount}</div>
-            <div className="text-gold uppercase tracking-widest mt-2 font-bold text-sm">{t('game.count')}</div>
-          </div>
-
-          {/* Direction */}
-          {gameStatus === 'playing' && (
-            <div className={`absolute inset-0 border-4 border-dashed border-white/20 rounded-full ${direction === 1 ? 'animate-spin-slow' : 'animate-reverse-spin'}`}>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gold text-black p-2 rounded-full shadow-lg">
-                {direction === 1 ? <ArrowRight /> : <ArrowLeft />}
+          {/* Waiting State: Big QR Code */}
+          {gameStatus === 'waiting' ? (
+            <div className="flex flex-col items-center animate-in fade-in zoom-in duration-500">
+              <div className="bg-white p-4 rounded-xl shadow-2xl mb-4">
+                <QRCode value={joinUrl} size={180} />
               </div>
+              <div className="flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full border border-white/10 backdrop-blur-sm">
+                <span className="text-gold font-mono text-sm max-w-[200px] truncate">{joinUrl}</span>
+                <button 
+                  onClick={copyLink}
+                  className="p-1 hover:bg-white/10 rounded transition-colors text-white"
+                  title="Copy Link"
+                >
+                  {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+                </button>
+              </div>
+              <div className="text-white/70 text-sm mt-2 font-bold tracking-widest uppercase animate-pulse">{t('game.scan')}</div>
             </div>
+          ) : (
+            /* Playing State: Count & Direction */
+            <>
+              <div className="text-center z-10">
+                <div className="text-8xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">{currentCount}</div>
+                <div className="text-gold uppercase tracking-widest mt-2 font-bold text-sm">{t('game.count')}</div>
+              </div>
+
+              <div className={`absolute inset-0 border-4 border-dashed border-white/20 rounded-full ${direction === 1 ? 'animate-spin-slow' : 'animate-reverse-spin'}`}>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gold text-black p-2 rounded-full shadow-lg">
+                  {direction === 1 ? <ArrowRight /> : <ArrowLeft />}
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Top Card */}
-          {topCard && (
+          {/* Top Card (Only when playing) */}
+          {topCard && gameStatus === 'playing' && (
             <div className="absolute -right-12 rotate-12 transform hover:scale-110 transition duration-300 drop-shadow-2xl">
               <Card card={topCard} size="lg" />
             </div>

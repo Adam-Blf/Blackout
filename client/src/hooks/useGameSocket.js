@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import io from 'socket.io-client';
 
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '/');
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || '/';
 
 export const useGameSocket = () => {
   const [socket, setSocket] = useState(null);

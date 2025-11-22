@@ -2,348 +2,323 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
-const mongoose = require('mongoose');
 
 const app = express();
 app.use(cors());
 
-// Health Check
-app.get('/', (req, res) => {
-  res.send('Blackout Server is Running');
+// --- Keep Alive ---
+app.get('/keep-alive', (req, res) => {
+    res.send('Server is alive');
 });
-
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://adam:123@99.9kaqkae.mongodb.net/?retryWrites=true&w=majority';
-
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => console.error('Could not connect to MongoDB', err));
-
-// Game Schema
-const gameSchema = new mongoose.Schema({
-  roomCode: String,
-  startTime: { type: Date, default: Date.now },
-  endTime: Date,
-  winner: String,
-  players: [{
-    name: String,
-    errors: Number,
-    sips: Number
-  }]
-});
-
-const GameModel = mongoose.model('Game', gameSchema);
 
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    cors: {
+        origin: "*", // Allow all origins for local mobile testing
+        methods: ["GET", "POST"]
+    }
 });
 
-// Game Constants
+// --- Game State (In-Memory) ---
+const games = {};
+
+// --- Deck Logic ---
 const SUITS = ['♠', '♥', '♦', '♣'];
 const VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-// Store multiple games
-const games = {};
-
 function createDeck() {
-  const deck = [];
-  for (let suit of SUITS) {
-    for (let value of VALUES) {
-      deck.push({ suit, value, type: 'standard' });
+    let deck = [];
+    for (let s of SUITS) {
+        for (let v of VALUES) {
+            deck.push({ suit: s, value: v });
+        }
     }
-  }
-  // Add 2 Jokers
-  deck.push({ suit: '★', value: 'Joker', type: 'joker', id: 'j1' });
-  deck.push({ suit: '★', value: 'Joker', type: 'joker', id: 'j2' });
-  return shuffle(deck);
+    return shuffle(deck);
 }
 
-function shuffle(deck) {
-  for (let i = deck.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [deck[i], deck[j]] = [deck[j], deck[i]];
-  }
-  return deck;
+function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
 }
 
-function getNextPlayerIndex(game) {
-  let nextIndex = game.currentPlayerIndex + game.direction;
-  if (nextIndex >= game.players.length) nextIndex = 0;
-  if (nextIndex < 0) nextIndex = game.players.length - 1;
-  return nextIndex;
-}
-
+// --- Helper Functions ---
 function generateRoomCode() {
-  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let result = '';
-  for (let i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
+    return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
 
+function getNextPlayer(game) {
+    let idx = game.currentPlayerIndex + game.direction;
+    if (idx >= game.players.length) idx = 0;
+    if (idx < 0) idx = game.players.length - 1;
+    return idx;
+}
+
+// --- Socket Logic ---
 io.on('connection', (socket) => {
-  console.log('User connected:', socket.id);
+    console.log('User connected:', socket.id);
 
-  socket.on('create_game', (playerName) => {
-    const roomCode = generateRoomCode();
-    games[roomCode] = {
-      roomCode,
-      hostId: socket.id,
-      players: [],
-      deck: [],
-      discardPile: [],
-      currentCount: 0,
-      direction: 1,
-      currentPlayerIndex: 0,
-      gameStatus: 'waiting',
-      winner: null,
-      message: "Waiting for players...",
-      sipsToDistribute: 0,
-      distributingPlayer: null,
-      lastActivity: Date.now()
-    };
-
-    socket.join(roomCode);
-    
-    // Host is no longer a player
-    
-    socket.emit('game_created', { roomCode, gameState: games[roomCode] });
-    io.to(roomCode).emit('game_state_update', games[roomCode]);
-  });
-
-  socket.on('join_game', ({ roomCode, playerName }) => {
-    const game = games[roomCode];
-    if (!game) {
-      socket.emit('error', 'Game not found');
-      return;
-    }
-
-    const existingPlayer = game.players.find(p => p.id === socket.id);
-    if (existingPlayer) {
-        socket.emit('game_joined', { roomCode, gameState: game });
-        return;
-    }
-
-    socket.join(roomCode);
-
-    const newPlayer = {
-      id: socket.id,
-      name: playerName || `Player ${game.players.length + 1}`,
-      hand: [],
-      sips: 0,
-      penalties: 0,
-      isHost: false
-    };
-
-    game.players.push(newPlayer);
-    
-    socket.emit('game_joined', { roomCode, gameState: game });
-    io.to(roomCode).emit('game_state_update', game);
-  });
-
-  socket.on('request_game_state', (roomCode) => {
-    if (roomCode && games[roomCode]) {
-        socket.emit('game_state_update', games[roomCode]);
-    }
-  });
-
-  socket.on('start_game', (roomCode) => {
-    const game = games[roomCode];
-    if (!game) return;
-
-    // Check if sender is host
-    if (game.hostId !== socket.id) return;
-
-    if (game.players.length < 2) { 
-        // For strict rules: if (game.players.length < 4) return;
-    }
-    
-    game.deck = createDeck();
-    game.discardPile = [];
-    game.currentCount = 0;
-    game.direction = 1;
-    game.currentPlayerIndex = 0;
-    game.gameStatus = 'playing';
-    game.winner = null;
-    game.message = "Game Started! Count is 0.";
-    game.sipsToDistribute = 0;
-
-    // Deal 2 cards to each player
-    game.players.forEach(p => {
-      p.hand = [game.deck.pop(), game.deck.pop()];
-      p.sips = 0;
-      p.penalties = 0;
+    // 1. Create Game (Host)
+    socket.on('create_game', () => {
+        const roomCode = generateRoomCode();
+        games[roomCode] = {
+            roomCode,
+            hostId: socket.id,
+            players: [], // { id, name, hand, avatar }
+            deck: [],
+            discardPile: [],
+            currentCount: 0,
+            direction: 1, // 1 or -1
+            currentPlayerIndex: 0,
+            status: 'waiting', // waiting, playing, gameover
+            winner: null,
+            message: 'Waiting for players...'
+        };
+        socket.join(roomCode);
+        socket.emit('game_created', games[roomCode]);
+        console.log(`Game created: ${roomCode}`);
     });
 
-    io.to(roomCode).emit('game_state_update', game);
-  });
+    // 2. Join Game (Player)
+    socket.on('join_game', ({ roomCode, name }) => {
+        const room = roomCode?.toUpperCase();
+        const game = games[room];
 
-  socket.on('play_card', ({ roomCode, cardIndex, valueChoice, declaredCount }) => {
-    const game = games[roomCode];
-    if (!game) return;
+        if (!game) {
+            socket.emit('error', 'Room not found');
+            return;
+        }
+        if (game.status !== 'waiting') {
+            socket.emit('error', 'Game already started');
+            return;
+        }
+        if (game.players.find(p => p.name === name)) {
+            socket.emit('error', 'Name taken');
+            return;
+        }
 
-    const player = game.players.find(p => p.id === socket.id);
-    if (!player || game.gameStatus !== 'playing') return;
-    if (game.players[game.currentPlayerIndex].id !== socket.id) return;
+        const newPlayer = {
+            id: socket.id,
+            name: name || `Player ${game.players.length + 1}`,
+            hand: [],
+            lives: 3
+        };
 
-    const card = player.hand[cardIndex];
-    let val = 0;
-    let message = `${player.name} played ${card.value}`;
-    
-    // Calculate theoretical new count
-    let newCount = game.currentCount;
-    let direction = game.direction;
+        game.players.push(newPlayer);
+        socket.join(room);
 
-    // Logic
-    if (card.value === 'Joker') {
-        val = parseInt(valueChoice) || 0; // 1-9
-        newCount += val;
-        message += ` (Value: ${val})`;
-    } else if (card.value === 'A') {
-        val = parseInt(valueChoice) || 1; // 1 or 11
-        newCount += val;
-        message += ` (Value: ${val})`;
-    } else if (card.value === 'K') {
-        newCount = 70;
-        message += ` (Count set to 70)`;
-    } else if (card.value === 'Q') {
-        direction *= -1;
-        message += ` (Direction Reversed)`;
-    } else if (card.value === 'J') {
-        newCount -= 10;
-        message += ` (-10)`;
-    } else {
-        val = parseInt(card.value);
-        newCount += val;
-    }
+        // Notify everyone
+        io.to(room).emit('game_updated', game);
+        socket.emit('joined_success', { playerId: socket.id, roomCode: room });
+        console.log(`${name} joined ${room}`);
+    });
 
-    // Check bounds
-    if (newCount < 0) newCount = 0;
-
-    // Verify Declared Count
-    const parsedDeclared = parseInt(declaredCount);
-    if (isNaN(parsedDeclared) || parsedDeclared !== newCount) {
-        // player.sips += 1; // Don't assign sips yet
-        player.penalties += 1;
-        message += ` | WRONG COUNT! (Said ${parsedDeclared}, was ${newCount})`;
-    }
-
-    // Apply changes
-    game.currentCount = newCount;
-    game.direction = direction;
-
-    // Remove card
-    player.hand.splice(cardIndex, 1);
-    game.discardPile.push(card);
-
-    // Draw new card (Always have 2)
-    if (game.deck.length === 0) {
-        game.deck = shuffle([...game.discardPile]);
-        game.discardPile = [];
-    }
-    player.hand.push(game.deck.pop());
-
-    // Check Events
-    // 1. Win Condition (99)
-    if (game.currentCount === 99) {
-        game.gameStatus = 'gameover';
-        game.winner = player;
-        
-        // Distribute sips based on penalties
-        game.players.forEach(p => {
-            p.sips += p.penalties; // 1 sip per error
-        });
-
-        game.message = `99! ${player.name} wins! Everyone else: CUL SEC!`;
-        
-        // Save to MongoDB
-        const gameRecord = new GameModel({
-            roomCode: game.roomCode,
-            endTime: new Date(),
-            winner: player.name,
-            players: game.players.map(p => ({
-                name: p.name,
-                errors: p.penalties,
-                sips: p.sips
-            }))
-        });
-        gameRecord.save().catch(err => console.error('Error saving game:', err));
-
-        io.to(roomCode).emit('game_state_update', game);
-        return;
-    }
-
-    // 2. Multiple of 10
-    if (game.currentCount > 0 && game.currentCount % 10 === 0) {
-        const sips = Math.floor(game.currentCount / 10);
-        message += ` | MULTIPLE OF 10! Distribute ${sips} sips!`;
-    }
-
-    game.message = message;
-    game.currentPlayerIndex = getNextPlayerIndex(game);
-    game.lastActivity = Date.now();
-
-    io.to(roomCode).emit('game_state_update', game);
-  });
-
-  socket.on('assign_penalty', ({ roomCode, targetId }) => {
-    const game = games[roomCode];
-    if (!game) return;
-
-    const target = game.players.find(p => p.id === targetId);
-    if (target) {
-        target.sips += 2;
-        game.message = `${target.name} penalized! +2 sips.`;
-        io.to(roomCode).emit('game_state_update', game);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-    // Find which game the user was in
-    for (const roomCode in games) {
+    // 3. Start Game
+    socket.on('start_game', (roomCode) => {
         const game = games[roomCode];
+        if (!game) return;
+        if (game.hostId !== socket.id) return; // Only host can start
+
+        game.deck = createDeck();
+        game.status = 'playing';
+        game.currentCount = 0;
+        game.direction = 1;
+        game.currentPlayerIndex = 0;
+        game.message = "Game Started! Count is 0.";
+
+        // Deal 3 cards to each player
+        game.players.forEach(p => {
+            p.hand = [game.deck.pop(), game.deck.pop(), game.deck.pop()];
+        });
+
+        io.to(roomCode).emit('game_updated', game);
+    });
+
+    // 4. Play Card
+    socket.on('play_card', ({ roomCode, card, valueChoice }) => {
+        const game = games[roomCode];
+        if (!game) return;
         
-        if (game.hostId === socket.id) {
-            // Host disconnected, end game
-            delete games[roomCode];
-            io.to(roomCode).emit('error', 'Host disconnected. Game ended.');
-            break;
+        const player = game.players.find(p => p.id === socket.id);
+        if (!player) return;
+
+        // Check turn
+        if (game.players[game.currentPlayerIndex].id !== socket.id) return;
+
+        // Game Logic
+        let val = 0;
+        let msg = `${player.name} played ${card.value}`;
+
+        // MGMF & 99 Rules
+        if (card.value === '4') {
+            // Prisonnier (Skip/Reverse)
+            val = 0;
+            game.direction *= -1;
+            msg += " (Reverse)";
+        } else if (card.value === '9') {
+            // Pass
+            val = 0;
+            msg += " (Pass)";
+        } else if (card.value === '10') {
+            // Héro (Save/Minus)
+            val = -10;
+            msg += " (-10)";
+        } else if (card.value === 'K') {
+            // Dieu (God) - Set to 99
+            game.currentCount = 99;
+            val = 0; 
+            msg += " (Dieu: Set to 99)";
+        } else if (card.value === 'A') {
+            val = valueChoice === 1 ? 1 : 11;
+            msg += ` (+${val})`;
+        } else if (card.value === '5') {
+            // Aubergiste (+/- 5)
+            val = valueChoice === -5 ? -5 : 5;
+            msg += ` (Aubergiste: ${val > 0 ? '+' : ''}${val})`;
+        } else if (card.value === 'J') {
+            // Oracle (Peek)
+            val = 0;
+            msg += " (Oracle: Peeking)";
+            // Send top 3 cards to player
+            const top3 = game.deck.slice(-3).map(c => `${c.value}${c.suit}`);
+            io.to(socket.id).emit('oracle_vision', top3);
+        } else if (card.value === 'Q') {
+            // Princesse (Swap Hands)
+            val = 0;
+            msg += " (Princesse: Swapped Hands)";
+            // Swap with next player
+            const nextIdx = getNextPlayer(game);
+            const nextPlayer = game.players[nextIdx];
+            const myHand = [...player.hand];
+            // Remove the played card first (it will be removed later in code, but we need to swap the REST)
+            // Actually, the played card is removed at the end of this function.
+            // So we should swap NOW, but keep the played card in "my" hand logic so it can be removed?
+            // No, better to swap everything EXCEPT the played card.
+            // Or simpler: Swap hands, then remove the played card from the new hand? No, that's wrong.
+            // Correct logic: Remove played card from current hand FIRST, then swap.
+            
+            // Let's do the remove logic here manually for Queen to avoid issues
+            const handIdx = player.hand.findIndex(c => c.suit === card.suit && c.value === card.value);
+            if (handIdx > -1) {
+                player.hand.splice(handIdx, 1);
+                game.discardPile.push(card);
+            }
+            
+            // Now swap
+            const tempHand = [...player.hand];
+            player.hand = [...nextPlayer.hand];
+            nextPlayer.hand = tempHand;
+            
+            // Skip the standard remove/draw logic for Queen since we handled it?
+            // We still need to draw a card for the current player to replace the played one?
+            // Usually in 99 you draw after playing.
+            // So: Remove card -> Swap -> Draw.
+            // If I swap, I get next player's hand (which has 3 cards).
+            // My hand (now next player's) has 2 cards.
+            // I draw 1 card. My hand (was next player's) becomes 4? No.
+            // Let's say:
+            // Me: [Q, A, 2]. Next: [5, 6, 7].
+            // Play Q. Me: [A, 2].
+            // Swap. Me: [5, 6, 7]. Next: [A, 2].
+            // Draw. Me: [5, 6, 7, New]. (4 cards).
+            // Next player has 2 cards.
+            // This messes up hand sizes.
+            // Maybe Princesse swaps the *entire* hand including the played card? No, played card is played.
+            // Let's assume: Swap hands. Then I draw.
+            // So I end up with NextPlayerHand + 1 card. NextPlayer ends up with MyOldHand (minus Q).
+            // This is fine, it's a chaotic card.
+            
+            // To avoid double removal, I'll set a flag or return early?
+            // I'll just let the standard logic run, but I need to be careful.
+            // Standard logic: finds card in `player.hand`.
+            // If I swap now, `player.hand` is different. The card `Q` is NOT in `player.hand` anymore (it's in next player's hand if I didn't remove it).
+            // So I MUST remove it first.
+            
+            // ALREADY REMOVED ABOVE.
+            // Now I need to prevent the standard logic from trying to remove it again.
+            // I will set a flag `cardProcessed = true`.
+        } else {
+            val = parseInt(card.value);
         }
 
-        const playerIndex = game.players.findIndex(p => p.id === socket.id);
-        
-        if (playerIndex !== -1) {
-            game.players.splice(playerIndex, 1);
-            if (game.players.length === 0) {
-                // Delete empty game immediately
-                delete games[roomCode];
-            } else {
-                io.to(roomCode).emit('game_state_update', game);
-            }
-            break;
+        // Update Count (if not King/Oracle/Princesse/Special 0s)
+        if (card.value !== 'K') {
+            game.currentCount += val;
         }
-    }
-  });
+        
+        // Ensure count doesn't go below 0
+        if (game.currentCount < 0) game.currentCount = 0;
+
+        // Check Loss (MGMF: End at 100+)
+        if (game.currentCount >= 100) {
+            msg = `${player.name} reached ${game.currentCount}! GAME OVER.`;
+            player.lives = 0; // Eliminate immediately
+            
+            // End the game immediately as requested ("fin a la partie")
+            game.status = 'gameover';
+            // Who won? Everyone else? Or just "Game Over"?
+            // Usually last man standing.
+            // If I eliminate this player, are there others?
+            const survivors = game.players.filter(p => p.lives > 0);
+            if (survivors.length === 1) {
+                game.winner = survivors[0].name;
+            } else {
+                // If multiple survivors, maybe just end it?
+                // User said "mette fin a la partie".
+                // I'll declare the previous player (who didn't bust) as winner?
+                // Or just "No Winner"?
+                // Let's stick to standard: Eliminate player. If only 1 left, they win.
+                // If multiple left, reset round.
+                // BUT user said "mette fin a la partie".
+                // I will force Game Over.
+                game.winner = "Nobody (Busted)"; 
+                // Or maybe the last person who played safely?
+                // Let's just set status to gameover.
+            }
+        } else {
+            // Next player
+            game.currentPlayerIndex = getNextPlayer(game);
+            
+            // Standard Remove/Draw Logic (Skip if Queen handled it)
+            if (card.value !== 'Q') {
+                const handIdx = player.hand.findIndex(c => c.suit === card.suit && c.value === card.value);
+                if (handIdx > -1) {
+                    player.hand.splice(handIdx, 1);
+                    game.discardPile.push(card);
+                }
+            }
+
+            // Draw card
+            if (game.deck.length === 0) {
+                game.deck = shuffle([...game.discardPile]);
+                game.discardPile = [];
+            }
+            player.hand.push(game.deck.pop());
+        }
+
+        game.message = msg;
+        io.to(roomCode).emit('game_updated', game);
+    });
+
+    socket.on('disconnect', () => {
+        // Handle disconnects (optional for now)
+        console.log('User disconnected', socket.id);
+    });
 });
 
-// Cleanup inactive games every 30 minutes
-setInterval(() => {
-    const now = Date.now();
-    for (const roomCode in games) {
-        if (now - games[roomCode].lastActivity > 30 * 60 * 1000) {
-            console.log(`Cleaning up inactive game: ${roomCode}`);
-            delete games[roomCode];
-        }
-    }
-}, 30 * 60 * 1000);
-
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`);
+
+    // Ping itself every 14 minutes
+    const KEEP_ALIVE_INTERVAL = 14 * 60 * 1000;
+    setInterval(() => {
+        http.get(`http://localhost:${PORT}/keep-alive`, (res) => {
+            // console.log(`Keep-alive ping status: ${res.statusCode}`);
+        }).on('error', (e) => {
+            console.error(`Keep-alive ping error: ${e.message}`);
+        });
+    }, KEEP_ALIVE_INTERVAL);
 });

@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  @apply bg-casino-green text-white;
+  @apply bg-gray-900 text-white;
 }
 
 

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ninety-nine-server
+    runtime: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
+    plan: free
+    branch: main
+    envVars:
+      - key: NODE_VERSION
+        value: 20.11.0

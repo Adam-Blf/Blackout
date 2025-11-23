@@ -35,11 +35,20 @@ export default function Host() {
     const joinUrl = `${window.location.origin}?room=${game.roomCode}`;
 
     return (
-        <div className="min-h-screen bg-gray-900 text-white font-sans overflow-hidden">
+        <div className="min-h-screen bg-black text-white font-sans overflow-hidden">
             {/* Header */}
-            <div className="p-4 bg-gray-800 flex justify-between items-center shadow-lg">
+            <div className="p-4 bg-black border-b border-gray-800 flex justify-between items-center shadow-lg">
                 <h1 className="text-2xl font-bold text-yellow-500">99 - The Game</h1>
-                <div className="text-xl font-mono bg-black/50 px-4 py-1 rounded">Room: {game.roomCode}</div>
+                <div className="flex gap-4 items-center">
+                    <a 
+                        href="/pmu/index.html" 
+                        target="_blank" 
+                        className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg font-bold transition-colors flex items-center gap-2"
+                    >
+                        🏇 Play PMU
+                    </a>
+                    <div className="text-xl font-mono bg-black/50 px-4 py-1 rounded">Room: {game.roomCode}</div>
+                </div>
             </div>
 
             {/* WAITING ROOM */}

@@ -57,7 +57,7 @@ export default function Player({ roomCode }) {
 
     if (!joined) {
         return (
-            <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4">
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4">
                 <h1 className="text-3xl font-bold text-yellow-500 mb-8">Join Room {roomCode}</h1>
                 <form onSubmit={handleJoin} className="w-full max-w-md space-y-4">
                     <div>
@@ -66,7 +66,7 @@ export default function Player({ roomCode }) {
                             type="text" 
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            className="w-full px-4 py-3 rounded-lg bg-gray-800 border border-gray-700 focus:border-yellow-500 focus:outline-none text-white"
+                            className="w-full px-4 py-3 rounded-lg bg-gray-900 border border-gray-800 focus:border-yellow-500 focus:outline-none text-white"
                             placeholder="Enter nickname..."
                             maxLength={12}
                         />
@@ -90,13 +90,13 @@ export default function Player({ roomCode }) {
 
     if (game.status === 'waiting') {
         return (
-            <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center p-4 text-center">
+            <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-4 text-center">
                 <User size={64} className="text-yellow-500 mb-4" />
                 <h2 className="text-2xl font-bold">You're in!</h2>
                 <p className="text-gray-400 mt-2">Waiting for host to start...</p>
                 <div className="mt-8 flex flex-wrap justify-center gap-2">
                     {game.players.map((p, i) => (
-                        <span key={i} className="bg-gray-800 px-3 py-1 rounded-full text-sm">{p.name}</span>
+                        <span key={i} className="bg-gray-900 px-3 py-1 rounded-full text-sm border border-gray-800">{p.name}</span>
                     ))}
                 </div>
             </div>
